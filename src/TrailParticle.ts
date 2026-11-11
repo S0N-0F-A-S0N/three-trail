@@ -9,7 +9,7 @@ import {
 } from 'three';
 import { UpdatableInstancedBufferGeometry } from './UpdatableGeometry';
 import { TrailParticleMaterial } from './TrailParticleMaterial';
-import { TMP_V3_0, TMP_V3_1, TMP_V3_2, getPos } from './utils';
+import { TMP_V3_0, TMP_V3_1, getPos } from './utils';
 
 export default class TrailParticle extends InstancedMesh<
   UpdatableInstancedBufferGeometry,
@@ -130,17 +130,24 @@ export default class TrailParticle extends InstancedMesh<
 
     const { cursor, length, currTime, material } = this;
     const oldHigh = cursor.high;
+    const dx = currPosition.x - lastPosition.x;
+    const dy = currPosition.y - lastPosition.y;
+    const dz = currPosition.z - lastPosition.z;
+    const doubleRadius = this.spawnRadius * 2;
+
     for (let i = 0 | 0; i < emitCountU32; i++) {
       // 更新粒子数据
       const offset = cursor.high * 5;
       // data
       buffers.buffer[offset] = Math.random();
       buffers.buffer[offset + 1] = currTime;
+
+      const t = (i + 1) / emitCountU32;
+
       // position 均匀在轨迹上出现粒子
-      TMP_V3_2.lerpVectors(lastPosition, currPosition, (i + 1) / emitCountU32);
-      buffers.buffer[offset + 2] = TMP_V3_2.x + (Math.random() * 2 - 1) * this.spawnRadius;
-      buffers.buffer[offset + 3] = TMP_V3_2.y + (Math.random() * 2 - 1) * this.spawnRadius;
-      buffers.buffer[offset + 4] = TMP_V3_2.z + (Math.random() * 2 - 1) * this.spawnRadius;
+      buffers.buffer[offset + 2] = lastPosition.x + dx * t + Math.random() * doubleRadius - this.spawnRadius;
+      buffers.buffer[offset + 3] = lastPosition.y + dy * t + Math.random() * doubleRadius - this.spawnRadius;
+      buffers.buffer[offset + 4] = lastPosition.z + dz * t + Math.random() * doubleRadius - this.spawnRadius;
       // 更新指针
       cursor.high = (cursor.high + 1) % length;
     }
