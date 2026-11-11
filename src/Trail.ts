@@ -11,7 +11,7 @@ import {
 } from 'three';
 import { TrailMaterial } from './TrailMaterial';
 import { UpdatableBufferGeometry } from './UpdatableGeometry';
-import { PLANE_VERTEX, getPos, TMP_V3_0, TMP_V3_1, TMP_BrushVertex } from './utils';
+import { PLANE_VERTEX, getPos, TMP_V3_0, TMP_V3_1 } from './utils';
 
 export class Trail extends Mesh<UpdatableBufferGeometry, TrailMaterial> {
   readonly frustumCulled = true; // 用于触发geometry更新的钩子
@@ -172,13 +172,15 @@ export class Trail extends Mesh<UpdatableBufferGeometry, TrailMaterial> {
     const posOffset = index * stride;
 
     // 设置姿态
+    const e = pose.elements;
     for (let i = 0; i < brushVertexLen; i++) {
-      const v3 = TMP_BrushVertex[i]!;
-      v3.copy(brushVertex[i]!);
-      v3.applyMatrix4(pose);
-      buffers.position[posOffset + i * 3] = v3.x;
-      buffers.position[posOffset + i * 3 + 1] = v3.y;
-      buffers.position[posOffset + i * 3 + 2] = v3.z;
+      const v = brushVertex[i]!;
+      const x = v.x, y = v.y, z = v.z;
+      const w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15]);
+
+      buffers.position[posOffset + i * 3] = (e[0] * x + e[4] * y + e[8] * z + e[12]) * w;
+      buffers.position[posOffset + i * 3 + 1] = (e[1] * x + e[5] * y + e[9] * z + e[13]) * w;
+      buffers.position[posOffset + i * 3 + 2] = (e[2] * x + e[6] * y + e[10] * z + e[14]) * w;
     }
     this.updateAttr(buffers.positionAttr, posOffset, stride);
 
